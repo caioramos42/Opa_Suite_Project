@@ -1,30 +1,9 @@
 from typing import Any, Optional
-from dataclasses import field
 
 from context.request.manager import Manager, RequestModel
-from decorators.dataclass_to_dict import dataclass_to_dict
-from decorators.not_implemented import not_implemented_error
-
-@dataclass_to_dict
-class OptionsList:
-    """Opções de paginação; ambos os valores são opcionais."""
-    skip: Optional[int] = None
-    limit: Optional[int] = None
+from models.mensagens import BodyList, MensagemEmAndamentoBody
 
 
-@dataclass_to_dict
-class Filter:
-    """Filtros opcionais para a listagem de atendimentos."""
-    id_rota: Optional[str] = field(default=None, metadata={"json_name": "id_rota"})
-    
-@dataclass_to_dict
-class BodyList:
-    """Corpo da listagem: `filter` é obrigatório e `options` é opcional."""
-
-    filter: Optional[Filter] = None
-    options: Optional[OptionsList] = None
-
-   
 class MensagensContext():
     def __init__(self, manager: Manager) -> None:
         """Inicializa o contexto dos endpoints de mensagens."""
@@ -60,18 +39,16 @@ class MensagensContext():
         """
         return RequestModel(body=body)
 
-    @not_implemented_error
+    @Manager.make_request()
     def enviar_mensagem_em_atendimento_em_andamento(
-        self, body: dict[str, Any]
-    ) -> None:
+        self, body: MensagemEmAndamentoBody
+    ) -> Any:
         """Envia uma mensagem a um atendimento em andamento.
 
         Args:
-            body: Payload com ``customerServiceId`` e ``content``.
+            body: Payload com o ID do atendimento e o conteúdo da mensagem.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
-    
-        
+        return RequestModel(body=body)

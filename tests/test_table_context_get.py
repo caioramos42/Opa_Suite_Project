@@ -2,62 +2,75 @@ import unittest
 from unittest.mock import Mock, patch
 
 from context.request.manager import Manager
-from context.table_context.atendimento import (
-    AtendimentoContext,
-    BodyList as AtendimentoBody,
-    Filter as AtendimentoFilter,
-    OptionsList as AtendimentoOptions,
-)
+from context.table_context.atendimento import AtendimentoContext
 from context.table_context.canais_de_comunicacao import (
-    BodyList as CanaisBody,
     CanaisDeComunicacaoContext,
+)
+from context.table_context.cliente import ClienteContext
+from context.table_context.contatos import ContatosContext
+from context.table_context.departamentos import DepartamentosContext
+from context.table_context.etiqueta import EtiquetaContext
+from context.table_context.mensagens import MensagensContext
+from context.table_context.motivos import MotivosContext
+from context.table_context.notificacao import NotificacaoContext
+from context.table_context.periodos import PeriodosContext
+from context.table_context.templates_de_mensagem import TemplateDeMensagemContext
+from context.table_context.usuario import UsuarioContext
+from models.atendimento import (
+    BodyList as AtendimentoBody,
+    EtiquetaAtendimentoBody,
+    Filter as AtendimentoFilter,
+    MotivoAtendimentoBody,
+    OptionsList as AtendimentoOptions,
+    ObservacaoBody,
+)
+from models.canais_de_comunicacao import (
+    BodyList as CanaisBody,
     Filter as CanaisFilter,
 )
-from context.table_context.cliente import (
+from models.cliente import (
     BodyList as ClienteBody,
-    ClienteContext,
+    ClienteBody as ClientePayload,
+    ClientePatchBody,
     Filter as ClienteFilter,
 )
-from context.table_context.contatos import (
+from models.contatos import (
     BodyList as ContatosBody,
-    ContatosContext,
+    ContatoBody,
     Filter as ContatosFilter,
 )
-from context.table_context.departamentos import (
+from models.departamentos import (
     BodyList as DepartamentosBody,
-    DepartamentosContext,
+    DepartamentoBody,
     Filter as DepartamentosFilter,
 )
-from context.table_context.etiqueta import (
+from models.etiqueta import (
     BodyList as EtiquetaBody,
-    EtiquetaContext,
+    CriarEtiquetaBody,
     Filter as EtiquetaFilter,
 )
-from context.table_context.mensagens import (
+from models.mensagens import (
     BodyList as MensagensBody,
     Filter as MensagensFilter,
-    MensagensContext,
+    MensagemEmAndamentoBody,
 )
-from context.table_context.motivos import (
+from models.motivos import (
     BodyList as MotivosBody,
     Filter as MotivosFilter,
-    MotivosContext,
 )
-from context.table_context.notificacao import NotificacaoContext
-from context.table_context.periodos import (
+from models.notificacao import NotificacaoBody
+from models.periodos import (
     BodyList as PeriodosBody,
     Filter as PeriodosFilter,
-    PeriodosContext,
 )
-from context.table_context.templates_de_mensagem import (
+from models.templates_de_mensagem import (
     BodyList as TemplatesBody,
+    EnvioTemplateBody,
     Filter as TemplatesFilter,
-    TemplateDeMensagemContext,
 )
-from context.table_context.usuario import (
+from models.usuario import (
     BodyList as UsuarioBody,
     Filter as UsuarioFilter,
-    UsuarioContext,
 )
 
 
@@ -91,23 +104,28 @@ class TableContextGetTests(unittest.TestCase):
         self.request = self.request_patcher.start()
         self.addCleanup(self.request_patcher.stop)
 
-    def assert_get_request(
+    def assert_api_request(
         self,
         call,
+        method: str,
         path: str,
         body=None,
     ) -> None:
         self.request.reset_mock()
+        self.response.raise_for_status.reset_mock()
 
         self.assertEqual(call(), self.response_body)
         self.request.assert_called_once_with(
-            method="GET",
+            method=method,
             url=f"{self.base_url}/{path}",
             headers=self.manager.headers,
             json=body,
             timeout=15,
         )
-        self.response.raise_for_status.assert_called()
+        self.response.raise_for_status.assert_called_once_with()
+
+    def assert_get_request(self, call, path: str, body=None) -> None:
+        self.assert_api_request(call, "GET", path, body)
 
     def test_atendimento_get_endpoints(self) -> None:
         context = self.contexts["atendimento"]
@@ -336,42 +354,247 @@ class TableContextGetTests(unittest.TestCase):
         )
         self.assertIsNone(self.manager.url_path)
 
-    def test_non_get_routes_are_explicitly_unimplemented(self) -> None:
+    def test_atendimento_write_endpoints(self) -> None:
         atendimento = self.contexts["atendimento"]
-        cliente = self.contexts["cliente"]
-        contatos = self.contexts["contatos"]
-        departamentos = self.contexts["departamentos"]
-        etiqueta = self.contexts["etiqueta"]
-        mensagens = self.contexts["mensagens"]
-        templates = self.contexts["templates"]
-        notificacao = self.contexts["notificacao"]
-
-        calls = (
-            ("criar observação", lambda: atendimento.criar_observacao("at-1", "note")),
-            ("adicionar etiqueta", lambda: atendimento.adicionar_etiqueta("at-1", "tag-1")),
-            ("adicionar motivo", lambda: atendimento.adicionar_motivo("at-1", "reason-1")),
-            ("remover etiqueta", lambda: atendimento.remover_etiqueta("at-1", "tag-1")),
-            ("enviar mensagem", lambda: mensagens.enviar_mensagem_em_atendimento_em_andamento({})),
-            ("enviar template", lambda: templates.enviar_template({})),
-            ("criar cliente", lambda: cliente.criar_cliente({})),
-            ("editar cliente", lambda: cliente.editar_cliente("client-1", {})),
-            ("editar parcialmente cliente", lambda: cliente.editar_parcialmente_cliente("client-1", {})),
-            ("remover cliente", lambda: cliente.remover_cliente("client-1")),
-            ("criar contato", lambda: contatos.criar_contato({})),
-            ("editar contato", lambda: contatos.editar_contato("contact-1", {})),
-            ("remover contato", lambda: contatos.remover_contato("contact-1")),
-            ("criar etiqueta", lambda: etiqueta.criar_etiqueta({})),
-            ("enviar notificação", lambda: notificacao.enviar_notificacao({})),
-            ("criar departamento", lambda: departamentos.criar_departamento({})),
-            ("editar departamento", lambda: departamentos.editar_departamento("department-1", {})),
+        self.assert_api_request(
+            lambda: atendimento.criar_observacao(
+                "at-1", ObservacaoBody(message="note")
+            ),
+            "POST",
+            "atendimento/at-1/observacao",
+            {"message": "note"},
+        )
+        self.assert_api_request(
+            lambda: atendimento.adicionar_etiqueta(
+                "at-1", EtiquetaAtendimentoBody(tag_id="tag-1")
+            ),
+            "POST",
+            "atendimento/at-1/etiqueta",
+            {"tagId": "tag-1"},
+        )
+        self.assert_api_request(
+            lambda: atendimento.adicionar_motivo(
+                "at-1", MotivoAtendimentoBody(reason_id="reason-1")
+            ),
+            "POST",
+            "atendimento/at-1/motivo",
+            {"reasonId": "reason-1"},
+        )
+        self.assert_api_request(
+            lambda: atendimento.remover_etiqueta("at-1", "tag-1"),
+            "DELETE",
+            "atendimento/at-1/etiqueta/tag-1",
         )
 
-        for route_name, call in calls:
-            with self.subTest(route=route_name):
-                with self.assertRaises(NotImplementedError):
-                    call()
+    def test_message_and_template_send_endpoints(self) -> None:
+        self.assert_api_request(
+            lambda: self.contexts["mensagens"].enviar_mensagem_em_atendimento_em_andamento(
+                MensagemEmAndamentoBody(
+                    customer_service_id="service-1",
+                    content={"type": "text", "text": "Hello"},
+                )
+            ),
+            "POST",
+            "atendimento/mensagem/send",
+            {
+                "customerServiceId": "service-1",
+                "content": {"type": "text", "text": "Hello"},
+            },
+        )
+        self.assert_api_request(
+            lambda: self.contexts["templates"].enviar_template(
+                EnvioTemplateBody(
+                    contato={"canalCliente": "+5511999999999"},
+                    template={
+                        "_id": "template-1",
+                        "variaveis": ["first", "second"],
+                    },
+                    canal="channel-1",
+                )
+            ),
+            "POST",
+            "template/send",
+            {
+                "contato": {"canalCliente": "+5511999999999"},
+                "template": {
+                    "_id": "template-1",
+                    "variaveis": ["first", "second"],
+                },
+                "canal": "channel-1",
+            },
+        )
 
+    def test_cliente_write_endpoints_and_patch_validation(self) -> None:
+        cliente = self.contexts["cliente"]
+        body = ClientePayload(
+            nome="Arnold Schwarzenegger",
+            status="A",
+            prospect=False,
+            cliente=True,
+            fornecedor=False,
+            prestador_servico=False,
+            cpf_cnpj="640.642.910-93",
+            tags=["tag-1"],
+        )
+        payload = {
+            "nome": "Arnold Schwarzenegger",
+            "status": "A",
+            "prospect": False,
+            "cliente": True,
+            "fornecedor": False,
+            "prestadorServico": False,
+            "cpf_cnpj": "640.642.910-93",
+            "tags": ["tag-1"],
+        }
+        self.assert_api_request(
+            lambda: cliente.criar_cliente(body),
+            "POST",
+            "cliente",
+            payload,
+        )
+        self.assert_api_request(
+            lambda: cliente.editar_cliente("client-1", body),
+            "PUT",
+            "cliente/client-1",
+            payload,
+        )
+        self.assert_api_request(
+            lambda: cliente.editar_parcialmente_cliente(
+                "client-1", ClientePatchBody(prospect=False)
+            ),
+            "PATCH",
+            "cliente/client-1",
+            {"prospect": False},
+        )
+        self.assert_api_request(
+            lambda: cliente.remover_cliente("client-1"),
+            "DELETE",
+            "cliente/client-1",
+        )
+        self.request.reset_mock()
+        with self.assertRaisesRegex(ValueError, "ao menos um campo"):
+            ClientePatchBody()
         self.request.assert_not_called()
+
+    def test_contato_write_endpoints(self) -> None:
+        contatos = self.contexts["contatos"]
+        common = {
+            "nome": "Arnold Schwarzenegger",
+            "requerAutenticacaoSempre": True,
+            "habilitarAlerta": True,
+            "lead": False,
+            "historico_email": True,
+        }
+        create_body = ContatoBody(
+            nome="Arnold Schwarzenegger",
+            requer_autenticacao_sempre=True,
+            habilitar_alerta=True,
+            lead=False,
+            historico_email=True,
+            celular_completo="+5549988776655",
+            senha="secret",
+            repetir_senha="secret",
+        )
+        self.assert_api_request(
+            lambda: contatos.criar_contato(create_body),
+            "POST",
+            "contato",
+            {
+                **common,
+                "celularCompleto": "+5549988776655",
+                "senha": "secret",
+                "repetirSenha": "secret",
+            },
+        )
+        update_body = ContatoBody(
+            nome="Arnold Schwarzenegger",
+            requer_autenticacao_sempre=True,
+            habilitar_alerta=True,
+            lead=False,
+            historico_email=True,
+            celular_completo="+5549988776655",
+        )
+        self.assert_api_request(
+            lambda: contatos.editar_contato("contact-1", update_body),
+            "PUT",
+            "contato/contact-1",
+            {**common, "celularCompleto": "+5549988776655"},
+        )
+        self.assert_api_request(
+            lambda: contatos.remover_contato("contact-1"),
+            "DELETE",
+            "contato/contact-1",
+        )
+        self.request.reset_mock()
+        with self.assertRaisesRegex(ValueError, "senha e repetir_senha"):
+            contatos.criar_contato(update_body)
+        self.request.assert_not_called()
+
+    def test_tag_notification_and_department_write_endpoints(self) -> None:
+        self.assert_api_request(
+            lambda: self.contexts["etiqueta"].criar_etiqueta(
+                CriarEtiquetaBody(nome="Urgente", cor="blue", tipo="empresa")
+            ),
+            "POST",
+            "etiqueta",
+            {"nome": "Urgente", "cor": "blue", "tipo": "empresa"},
+        )
+        self.assert_api_request(
+            lambda: self.contexts["notificacao"].enviar_notificacao(
+                NotificacaoBody(
+                    type="news",
+                    title="Title",
+                    description="Description",
+                    users=["user-1"],
+                    link="https://example.test",
+                )
+            ),
+            "POST",
+            "notificacao/send",
+            {
+                "type": "news",
+                "title": "Title",
+                "description": "Description",
+                "users": ["user-1"],
+                "link": "https://example.test",
+            },
+        )
+        self.assert_api_request(
+            lambda: self.contexts["departamentos"].criar_departamento(
+                DepartamentoBody(
+                    nome="Teste API",
+                    status="A",
+                    tipo_encaminhamento_ligacoes="S",
+                )
+            ),
+            "POST",
+            "departamento",
+            {
+                "nome": "Teste API",
+                "status": "A",
+                "tipoEncaminhamentoLigacoes": "S",
+            },
+        )
+        self.assert_api_request(
+            lambda: self.contexts["departamentos"].editar_departamento(
+                "department-1",
+                DepartamentoBody(
+                    nome="Departamento",
+                    status="I",
+                    tipo_encaminhamento_ligacoes="S",
+                    cod_pabx="332",
+                ),
+            ),
+            "PUT",
+            "departamento/department-1",
+            {
+                "nome": "Departamento",
+                "status": "I",
+                "tipoEncaminhamentoLigacoes": "S",
+                "cod_pabx": "332",
+            },
+        )
+
 
 
 if __name__ == "__main__":

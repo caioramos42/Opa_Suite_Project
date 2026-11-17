@@ -1,7 +1,7 @@
 from typing import Any
 
-from context.request.manager import Manager
-from decorators.not_implemented import not_implemented_error
+from context.request.manager import Manager, RequestModel
+from models.notificacao import NotificacaoBody
 
 
 class NotificacaoContext:
@@ -10,14 +10,14 @@ class NotificacaoContext:
         self._url_path = manager.url_path if manager.url_path is not None else "notificacao"
         self._manager = manager
 
-    @not_implemented_error
-    def enviar_notificacao(self, body: dict[str, Any]) -> None:
+    @Manager.make_request()
+    def enviar_notificacao(self, body: NotificacaoBody) -> Any:
         """Envia uma notificação aos usuários do sistema.
 
         Args:
             body: Tipo, título, descrição e destinatários da notificação.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(body=body)

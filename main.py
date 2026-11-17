@@ -3,7 +3,8 @@ import os
 import json
 
 from context.request.manager import Manager
-from context.table_context.atendimento import AtendimentoContext, BodyList, Filter, OptionsList
+from context.table_context.atendimento import AtendimentoContext
+from models.atendimento import BodyList, Filter, OptionsList
 load_dotenv()
         
 manager = Manager(
@@ -11,7 +12,7 @@ manager = Manager(
     os.getenv("OPA_API_TOKEN")
 )
 client = AtendimentoContext(manager)
-response = json.dumps(client.buscar_atendimento_populado(
+response = json.dumps(client.listar_atendimentos(
     BodyList(filter=Filter(), options=OptionsList(limit=2))
 ))
 

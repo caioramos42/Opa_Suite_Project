@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Any, TypeVar, dataclass_transform
 
 
@@ -21,7 +21,7 @@ def _serialize(value: Any) -> Any:
     return value
 
 
-@dataclass_transform()
+@dataclass_transform(field_specifiers=(field,))
 def dataclass_to_dict(cls: type[T]) -> type[T]:
     cls = dataclass(cls)
 

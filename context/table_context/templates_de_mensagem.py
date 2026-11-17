@@ -1,29 +1,7 @@
-from dataclasses import field
 from typing import Any, Optional
 
 from context.request.manager import Manager, RequestModel
-from decorators.dataclass_to_dict import dataclass_to_dict
-from decorators.not_implemented import not_implemented_error
-
-
-@dataclass_to_dict
-class OptionsList:
-    skip: Optional[int] = None
-    limit: Optional[int] = None
-
-
-@dataclass_to_dict
-class Filter:
-    atalho: Optional[str] = None
-    tipo_mensagem: Optional[str] = field(
-        default=None, metadata={"json_name": "tipo_mensagem"}
-    )
-
-
-@dataclass_to_dict
-class BodyList:
-    filter: Optional[Filter] = None
-    options: Optional[OptionsList] = None
+from models.templates_de_mensagem import BodyList, EnvioTemplateBody
 
 
 class TemplateDeMensagemContext:
@@ -59,14 +37,14 @@ class TemplateDeMensagemContext:
         """
         return RequestModel(url_data=id_template)
 
-    @not_implemented_error
-    def enviar_template(self, body: dict[str, Any]) -> None:
+    @Manager.make_request()
+    def enviar_template(self, body: EnvioTemplateBody) -> Any:
         """Envia um template de mensagem a um contato.
 
         Args:
             body: Dados do contato, template e canal de envio.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(body=body)

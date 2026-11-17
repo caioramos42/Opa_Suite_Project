@@ -1,29 +1,7 @@
-from dataclasses import field
 from typing import Any, Optional
 
 from context.request.manager import Manager, RequestModel
-from decorators.dataclass_to_dict import dataclass_to_dict
-from decorators.not_implemented import not_implemented_error
-
-
-@dataclass_to_dict
-class OptionsList:
-    skip: Optional[int] = None
-    limit: Optional[int] = None
-
-
-@dataclass_to_dict
-class Filter:
-    nome: Optional[str] = None
-    token: Optional[str] = None
-    cod_pabx: Optional[str] = field(default=None, metadata={"json_name": "cod_pabx"})
-    realizaAtendimento: Optional[bool] = None
-
-
-@dataclass_to_dict
-class BodyList:
-    filter: Optional[Filter] = None
-    options: Optional[OptionsList] = None
+from models.departamentos import BodyList, DepartamentoBody
 
 
 class DepartamentosContext:
@@ -61,29 +39,29 @@ class DepartamentosContext:
         """
         return RequestModel(url_data=id_departamento)
 
-    @not_implemented_error
-    def criar_departamento(self, body: dict[str, Any]) -> None:
+    @Manager.make_request()
+    def criar_departamento(self, body: DepartamentoBody) -> Any:
         """Cria um departamento.
 
         Args:
             body: Dados do novo departamento.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(body=body)
 
-    @not_implemented_error
+    @Manager.make_request()
     def editar_departamento(
-        self, id_departamento: str, body: dict[str, Any]
-    ) -> None:
+        self, id_departamento: str, body: DepartamentoBody
+    ) -> Any:
         """Atualiza um departamento.
 
         Args:
             id_departamento: Identificador do departamento.
             body: Dados completos para atualização.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(url_data=id_departamento, body=body)

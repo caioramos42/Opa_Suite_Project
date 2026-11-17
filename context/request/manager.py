@@ -69,6 +69,9 @@ class Manager:
                 if request_model.url_data:
                     url = f"{url}/{request_model.url_data}"
 
+                if func.__name__.startswith("enviar_"):
+                    url = f"{url}/send"
+
                 body = request_model.body
                 to_dict = getattr(body, "to_dict", None)
                 if callable(to_dict):

@@ -41,12 +41,8 @@ import os
 from dotenv import load_dotenv
 
 from context.request.manager import Manager
-from context.table_context.atendimento import (
-    AtendimentoContext,
-    BodyList,
-    Filter,
-    OptionsList,
-)
+from context.table_context.atendimento import AtendimentoContext
+from models.atendimento import BodyList, Filter, OptionsList
 
 load_dotenv()
 
@@ -93,9 +89,13 @@ Os contextos estão em `context/table_context`:
 - `periodos`
 - `notificacao`
 
-As rotas `GET` documentadas estão implementadas. As rotas de escrita
-(`POST`, `PUT`, `PATCH` e `DELETE`) estão declaradas como stubs e levantam
-`NotImplementedError` quando chamadas.
+As rotas `GET`, `POST`, `PUT`, `PATCH` e `DELETE` documentadas estão
+implementadas. Os payloads de escrita são modelos com `to_dict`, convertidos
+automaticamente pelo `Manager` antes do envio; campos opcionais com valor
+`None` são omitidos. O modelo `ClientePatchBody` exige ao menos um campo não
+nulo, e a criação de contatos exige `senha` e `repetir_senha`. Os modelos ficam
+na pasta `models`; métodos `enviar_*` recebem automaticamente o sufixo `/send`
+na URL pelo `Manager`.
 
 ## Testes
 

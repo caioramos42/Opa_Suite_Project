@@ -1,32 +1,7 @@
-from dataclasses import field
 from typing import Any, Optional
 
 from context.request.manager import Manager, RequestModel
-from decorators.dataclass_to_dict import dataclass_to_dict
-from decorators.not_implemented import not_implemented_error
-
-
-@dataclass_to_dict
-class OptionsList:
-    skip: Optional[int] = None
-    limit: Optional[int] = None
-
-
-@dataclass_to_dict
-class Filter:
-    nome: Optional[str] = None
-    email_principal: Optional[str] = field(
-        default=None, metadata={"json_name": "email_principal"}
-    )
-    fones_numero: Optional[str] = None
-    classificacao: Optional[str] = None
-    cli_emp: Optional[str] = field(default=None, metadata={"json_name": "cli_emp"})
-
-
-@dataclass_to_dict
-class BodyList:
-    filter: Optional[Filter] = None
-    options: Optional[OptionsList] = None
+from models.contatos import BodyList, ContatoBody
 
 
 class ContatosContext:
@@ -60,39 +35,43 @@ class ContatosContext:
         """
         return RequestModel(url_data=id_contato)
 
-    @not_implemented_error
-    def criar_contato(self, body: dict[str, Any]) -> None:
+    @Manager.make_request()
+    def criar_contato(self, body: ContatoBody) -> Any:
         """Cria um contato.
 
         Args:
             body: Dados de identificação e contato.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        if body.senha is None or body.repetir_senha is None:
+            raise ValueError(
+                "Informe senha e repetir_senha para criar um contato."
+            )
+        return RequestModel(body=body)
 
-    @not_implemented_error
-    def editar_contato(self, id_contato: str, body: dict[str, Any]) -> None:
+    @Manager.make_request()
+    def editar_contato(self, id_contato: str, body: ContatoBody) -> Any:
         """Atualiza os dados de um contato.
 
         Args:
             id_contato: Identificador do contato.
             body: Dados completos para atualização.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(url_data=id_contato, body=body)
 
-    @not_implemented_error
-    def remover_contato(self, id_contato: str) -> None:
+    @Manager.make_request()
+    def remover_contato(self, id_contato: str) -> Any:
         """Remove um contato que ainda não tenha realizado atendimentos.
 
         Args:
             id_contato: Identificador do contato.
 
-        Raises:
-            NotImplementedError: Esta rota ainda não foi implementada.
+        Returns:
+            Resposta JSON da API.
         """
-        ...
+        return RequestModel(url_data=id_contato)
